@@ -1,13 +1,37 @@
-import { crawler } from '@/libraries/scraper.ts'
+import { crawler } from '../libraries/scraper'
 
 type Holiday = { name: string; date: string }
 
+// In-memory cache replacing Deno.Kv
+interface CacheEntry {
+  data: Holiday[]
+  expiresAt: number | null
+}
+
+const cache = new Map<string, CacheEntry>()
+
+const getCached = (key: string): Holiday[] | null => {
+  const entry = cache.get(key)
+  if (!entry) return null
+  if (entry.expiresAt !== null && Date.now() > entry.expiresAt) {
+    cache.delete(key)
+    return null
+  }
+  return entry.data
+}
+
+const setCached = (key: string, data: Holiday[], ttlMs?: number): void => {
+  cache.set(key, {
+    data,
+    expiresAt: ttlMs ? Date.now() + ttlMs : null,
+  })
+}
+
 export const getHoliday = async (
-  kv: Deno.Kv,
   year: string,
   month?: string
 ): Promise<(Holiday & { is_national_holiday: boolean })[]> => {
-  const holidays = await getHolidayYearly(kv, year)
+  const holidays = await getHolidayYearly(year)
 
   const result = holidays.map((h) => ({
     ...h,
@@ -23,7 +47,6 @@ export const getHoliday = async (
 }
 
 export const getHolidayDate = async (
-  kv: Deno.Kv,
   date: Date
 ) => {
   const current = new Date(
@@ -35,7 +58,7 @@ export const getHolidayDate = async (
   const day = current.getDate().toString().padStart(2, '0')
   const formattedDate = `${year}-${month}-${day}`
 
-  const holidays = await getHolidayYearly(kv, year)
+  const holidays = await getHolidayYearly(year)
   const dayHolidays = holidays.filter(item => item.date === formattedDate)
   const holidayList = dayHolidays.map(item => item.name)
 
@@ -50,31 +73,30 @@ export const getHolidayDate = async (
 }
 
 export const getHolidayYearly = async (
-  kv: Deno.Kv,
   year: string
 ): Promise<Holiday[]> => {
-  const cached = await kv.get<Holiday[]>([year])
+  const cached = getCached(year)
 
-  if (cached.value) return cached.value
+  if (cached) return cached
 
   const data = await getData(year)
 
   if (data.length === 0) return data
 
   const currentYear = new Date().getFullYear()
-  const expireIn = Number(year) >= currentYear
+  const ttlMs = Number(year) >= currentYear
     ? 1000 * 60 * 60 * 24 * 30
     : undefined
 
-  await kv.set([year], data, { expireIn })
+  setCached(year, data, ttlMs)
 
   return data
 }
 
-const getData = (year: string): Promise<Holiday[]> | never[] => {
+const getData = (year: string): Promise<Holiday[]> => {
   try {
     return crawler(year)
   } catch {
-    return []
+    return Promise.resolve([])
   }
 }

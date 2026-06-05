@@ -1,15 +1,19 @@
 import { z } from 'zod'
 
-const maxYear = new Date().getFullYear() + 1
+// IMPORTANT: This MUST be a function call, not a const assignment.
+// Wrangler/esbuild evaluates top-level module code at build time and freezes
+// values like `new Date().getFullYear()` as literal constants in the bundle.
+// Calling getMaxYear() inside the request handler (or superRefine callback)
+// ensures `new Date()` is evaluated at runtime, per-request.
+export const getMaxYear = () => new Date().getFullYear() + 1
 
 export const dateSchema = z.object({
   year: z.coerce
-    .number()
+    .number({
+      invalid_type_error: 'Year must be a valid number',
+    })
     .min(2011, {
       message: 'Minimum year is 2011',
-    })
-    .max(maxYear, {
-      message: `Maximum year is ${maxYear}`,
     })
     .optional(),
   month: z
@@ -34,6 +38,18 @@ export const dateSchema = z.object({
     .optional(),
 })
   .superRefine(({ year, month, day }, ctx) => {
+    // Dynamic max year validation: getMaxYear() is called here (request time),
+    // NOT in the static schema definition (which would freeze at build time).
+    const maxYear = getMaxYear()
+
+    if (year !== undefined && year > maxYear) {
+      ctx.addIssue({
+        path: ['year'],
+        code: 'custom',
+        message: `Maximum year is ${maxYear}`,
+      })
+    }
+
     if (!year) {
       year = new Date().getFullYear()
     }
