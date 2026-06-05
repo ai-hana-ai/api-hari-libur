@@ -2,8 +2,9 @@
 
 [![CI](https://github.com/ai-hana-ai/api-hari-libur/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-hana-ai/api-hari-libur/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-49%20passing-brightgreen)](https://github.com/ai-hana-ai/api-hari-libur)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
+| ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-Cloudflare%20Workers-orange)](https://workers.cloudflare.com/)
+[![Stack](https://img.shields.io/badge/stack-Vite%2B%20Nitro%20Hono-purple)](https://viteplus.dev)
 
 A free REST API for Indonesian public holidays (Hari Libur Nasional). Holiday data is scraped from [tanggalans.com](https://www.tanggalans.com/) and cached in-memory for fast responses.
 
@@ -11,23 +12,25 @@ A free REST API for Indonesian public holidays (Hari Libur Nasional). Holiday da
 
 ## Tech Stack
 
-- **Runtime:** Cloudflare Workers (via Pages Functions)
+- **Runtime:** Cloudflare Workers (via Pages Functions + Nitro)
 - **Language:** TypeScript
+- **Server Engine:** [Nitro](https://nitro.build/) v3
 - **Framework:** [Hono](https://hono.dev/)
+- **Build Tool:** [Vite](https://vite.dev/) + [Rolldown](https://rolldown.rs/)
+- **Toolchain:** [Vite+](https://viteplus.dev/) (`vp` CLI)
+- **Package Manager:** [pnpm](https://pnpm.io/)
 - **Validation:** [Zod](https://zod.dev/) with `@hono/zod-validator`
 - **HTML Parsing:** [Linkedom](https://github.com/nicolo-ribaudo/linkedom)
 - **Testing:** [Vitest](https://vitest.dev/) — 49 tests
-- **Linting:** ESLint v10 + TypeScript-ESLint
-- **Deploy:** Cloudflare Pages with auto-deploy
+- **Linting:** [Oxc](https://oxc.rs/) (Oxlint)
+- **Deploy:** Cloudflare Pages
 
 ## Project Structure
 
 ```
 api-hari-libur/
 ├── .github/workflows/
-│   └── ci.yml            # CI pipeline: lint, typecheck, test, deploy check
-├── functions/api/
-│   └── [[catchall]].ts    # Cloudflare Pages Function (entry point)
+│   └── ci.yml            # CI pipeline: typecheck, test, build
 ├── public/                # Static landing page (served by Pages)
 │   ├── index.html
 │   ├── script.js
@@ -44,14 +47,16 @@ api-hari-libur/
 │   └── schema/
 │       └── date_schema.ts # Zod schema for date query params
 ├── test/
-│   ├── api.test.ts        # API integration tests (Hono app.request)
+│   ├── api.test.ts        # API integration tests
 │   ├── constants.test.ts  # Month name constant tests
 │   ├── date_schema.test.ts# Date schema validation tests (24 cases)
 │   └── holiday.test.ts    # Holiday business logic tests (mocked scraper)
-├── eslint.config.js       # ESLint flat config
-├── vitest.config.ts       # Vitest configuration
-├── wrangler.toml           # Cloudflare Workers config
+├── server.ts              # Nitro server entry (re-exports Hono app)
+├── vite.config.ts         # Vite + Nitro plugin config
+├── nitro.config.ts        # Nitro deployment config
+├── wrangler.toml           # Cloudflare Pages config
 ├── tsconfig.json
+├── pnpm-workspace.yaml    # pnpm workspace config
 └── package.json
 ```
 
@@ -134,22 +139,22 @@ curl https://api-hari-libur.pages.dev/api/tomorrow
 git clone https://github.com/ai-hana-ai/api-hari-libur.git
 cd api-hari-libur
 
-# 2. Install dependencies
-npm install
+# 2. Install dependencies (pnpm)
+pnpm install
 
-# 3. Start local dev server (API at http://localhost:8788)
-npm run dev
+# 3. Start local dev server (API at http://localhost:3000)
+pnpm dev
 ```
 
 ## Scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Start local Wrangler dev server |
-| `npm run deploy` | Deploy to Cloudflare Pages |
-| `npm test` | Run 49 unit/integration tests (Vitest) |
-| `npm run typecheck` | TypeScript type checking (tsc --noEmit) |
-| `npm run lint` | ESLint check (src/ + test/) |
+| `pnpm dev` | Start Vite dev server (Nitro + Hono + HMR) |
+| `pnpm build` | Build for production (Vite + Rolldown + Nitro) |
+| `pnpm preview` | Preview production build locally |
+| `pnpm test` | Run 49 unit/integration tests (Vitest) |
+| `pnpm deploy` | Deploy to Cloudflare Pages |
 
 ## Test Coverage
 
@@ -163,17 +168,17 @@ npm run dev
 Every push to `main` triggers:
 
 1. **Type check** — `tsc --noEmit`
-2. **Lint** — ESLint (src/ + test/)
-3. **Test** — Vitest (49 tests)
-4. **Deploy validation** — `wrangler pages deploy --dry-run`
+2. **Test** — Vitest (49 tests)
+3. **Build** — `vite build` (Vite + Nitro + Rolldown)
 
 ## Deploy
 
 ```bash
-npm run deploy
+pnpm build     # Build with Vite + Nitro
+pnpm deploy    # Deploy to Cloudflare Pages (dist/)
 ```
 
-Deploys to Cloudflare Pages at **https://api-hari-libur.pages.dev**.
+Build output goes to `dist/` (Nitro v3 generates `_worker.js` + static assets).
 
 ## License
 
