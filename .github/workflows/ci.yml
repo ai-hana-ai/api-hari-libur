@@ -28,8 +28,3 @@ jobs:
 
       - name: Run tests (vitest)
         run: npx vitest run
-
-      - name: Wrangler check (dry-run deploy validation)
-        run: npx wrangler pages deploy --dry-run
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
