@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,8 +14,8 @@
     <div class="header-inner">
       <a href="#" class="logo">API Hari Libur</a>
       <nav class="header-nav">
-        <a href="#docs">Docs</a>
-        <a href="#try-it">Try It</a>
+        <a href="#docs" data-i18n="navDocs">Docs</a>
+        <a href="#try-it" data-i18n="navTryIt">Try It</a>
         <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
           <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="5"></circle>
@@ -32,6 +32,9 @@
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
           </svg>
         </button>
+        <button class="lang-toggle" id="langToggle" aria-label="Toggle language">
+          <span class="lang-label">EN</span>
+        </button>
       </nav>
     </div>
   </header>
@@ -39,7 +42,7 @@
   <main>
     <section class="hero">
       <h1 class="hero-title">API Hari Libur</h1>
-      <p class="hero-tagline">Indonesian public holiday API. Simple, fast, free. Query <code>/api</code>, <code>/api/today</code>, or <code>/api/tomorrow</code>.</p>
+      <p class="hero-tagline" data-i18n-html="heroTagline">Indonesian public holiday API. Simple, fast, free. Query <code>/api</code>, <code>/api/today</code>, or <code>/api/tomorrow</code>.</p>
     </section>
 
     <section class="quick-ctas">
@@ -49,20 +52,26 @@
     </section>
 
     <section class="try-it" id="try-it">
-      <h2>Try It Live</h2>
+      <h2 data-i18n="tryItHeading">Try It Live</h2>
       <div class="try-card">
         <div class="try-buttons">
-          <div class="try-input-group" id="inputFields">
-            <label for="inputYear" class="try-input-label">Year</label>
-            <input type="number" id="inputYear" class="try-input" placeholder="Year" aria-label="Year">
-            <label for="inputMonth" class="try-input-label">Month</label>
-            <input type="number" id="inputMonth" class="try-input" placeholder="Month" min="1" max="12" aria-label="Month">
-            <label for="inputDay" class="try-input-label">Day</label>
-            <input type="number" id="inputDay" class="try-input" placeholder="Day" min="1" max="31" aria-label="Day">
-          </div>
           <button class="try-btn active" data-endpoint="/api">GET /api</button>
           <button class="try-btn" data-endpoint="/api/today">GET /api/today</button>
           <button class="try-btn" data-endpoint="/api/tomorrow">GET /api/tomorrow</button>
+          <div class="date-dropdowns hidden" id="dateDropdowns">
+            <div class="date-dropdown-item">
+              <label for="inputYear" class="try-input-label" data-i18n="labelYear">Year</label>
+              <select id="inputYear" class="try-select" aria-label="Year"></select>
+            </div>
+            <div class="date-dropdown-item">
+              <label for="inputMonth" class="try-input-label" data-i18n="labelMonth">Month</label>
+              <select id="inputMonth" class="try-select" aria-label="Month"></select>
+            </div>
+            <div class="date-dropdown-item">
+              <label for="inputDay" class="try-input-label" data-i18n="labelDay">Day</label>
+              <select id="inputDay" class="try-select" aria-label="Day"></select>
+            </div>
+          </div>
         </div>
         <div class="try-response">
           <div class="response-header">
@@ -75,13 +84,13 @@
               <span class="copy-label">Copy</span>
             </button>
           </div>
-          <pre class="response-body"><code class="json-output">Click an endpoint to fetch live data.</code></pre>
+          <pre class="response-body"><code class="json-output" data-i18n="defaultResponse">Click an endpoint to fetch live data.</code></pre>
         </div>
       </div>
     </section>
 
     <section class="documentation" id="docs">
-      <h2>Endpoints</h2>
+      <h2 data-i18n="endpointsHeading">Endpoints</h2>
 
       <!-- GET /api -->
       <article class="endpoint-card">
@@ -89,21 +98,21 @@
           <span class="method-badge">GET</span>
           <code class="endpoint-path">/api</code>
         </div>
-        <p class="endpoint-desc">Retrieve public holidays. Returns all holidays for a given year, optionally filtered by month and day.</p>
+        <p class="endpoint-desc" data-i18n="endpointDesc1">Retrieve public holidays. Returns all holidays for a given year, optionally filtered by month and day.</p>
 
-        <h4>Query Parameters</h4>
+        <h4 data-i18n="queryParams">Query Parameters</h4>
         <table class="params-table">
           <thead>
-            <tr><th>Param</th><th>Type</th><th>Required</th><th>Description</th></tr>
+            <tr><th data-i18n="thParam">Param</th><th data-i18n="thType">Type</th><th data-i18n="thRequired">Required</th><th data-i18n="thDescription">Description</th></tr>
           </thead>
           <tbody>
-            <tr><td><code>year</code></td><td>number</td><td>No</td><td>Year to query. Range: 2011 - current year + 1. Defaults to current year.</td></tr>
-            <tr><td><code>month</code></td><td>number</td><td>No</td><td>Month filter. Range: 1 - 12.</td></tr>
-            <tr><td><code>day</code></td><td>number</td><td>No</td><td>Day filter. Range: 1 - 31. Requires <code>month</code> to be set.</td></tr>
+            <tr><td><code>year</code></td><td>number</td><td data-i18n="no">No</td><td data-i18n="yearDesc">Year to query. Range: 2011 - current year + 1. Defaults to current year.</td></tr>
+            <tr><td><code>month</code></td><td>number</td><td data-i18n="no">No</td><td data-i18n="monthDesc">Month filter. Range: 1 - 12.</td></tr>
+            <tr><td><code>day</code></td><td>number</td><td data-i18n="no">No</td><td data-i18n-html="dayDesc">Day filter. Range: 1 - 31. Requires <code>month</code> to be set.</td></tr>
           </tbody>
         </table>
 
-        <h4>Example Request</h4>
+        <h4 data-i18n="exampleRequest">Example Request</h4>
         <div class="code-block">
           <button class="copy-btn" aria-label="Copy curl">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -115,14 +124,14 @@
           <pre><code>curl https://api-hari-libur.com/api?year=2025&amp;month=1</code></pre>
         </div>
 
-        <h4>Example Response</h4>
+        <h4 data-i18n="exampleResponse">Example Response</h4>
         <div class="code-block">
           <button class="copy-btn" aria-label="Copy response">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
-            <span class="copy-label">Copy</span>
+            <span class="copy-label" data-i18n="copy">Copy</span>
           </button>
           <pre><code data-sample-json>[
   {
@@ -145,12 +154,12 @@
           <span class="method-badge">GET</span>
           <code class="endpoint-path">/api/today</code>
         </div>
-        <p class="endpoint-desc">Check if today is a public holiday. Returns holiday status and a list of holidays for the current date.</p>
+        <p class="endpoint-desc" data-i18n="endpointDesc2">Check if today is a public holiday. Returns holiday status and a list of holidays for the current date.</p>
 
-        <h4>Query Parameters</h4>
-        <p class="params-none">None. Uses the server's current date (Asia/Jakarta timezone).</p>
+        <h4 data-i18n="queryParams">Query Parameters</h4>
+        <p class="params-none" data-i18n="noParamsToday">None. Uses the server's current date (Asia/Jakarta timezone).</p>
 
-        <h4>Example Request</h4>
+        <h4 data-i18n="exampleRequest">Example Request</h4>
         <div class="code-block">
           <button class="copy-btn" aria-label="Copy curl">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -162,14 +171,14 @@
           <pre><code>curl https://api-hari-libur.com/api/today</code></pre>
         </div>
 
-        <h4>Example Response</h4>
+        <h4 data-i18n="exampleResponse">Example Response</h4>
         <div class="code-block">
           <button class="copy-btn" aria-label="Copy response">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
-            <span class="copy-label">Copy</span>
+            <span class="copy-label" data-i18n="copy">Copy</span>
           </button>
           <pre><code data-sample-json>{
   "date": "2025-01-01",
@@ -188,12 +197,12 @@
           <span class="method-badge">GET</span>
           <code class="endpoint-path">/api/tomorrow</code>
         </div>
-        <p class="endpoint-desc">Check if tomorrow is a public holiday. Same response shape as <code>/api/today</code> but for the next date.</p>
+        <p class="endpoint-desc" data-i18n-html="endpointDesc3">Check if tomorrow is a public holiday. Same response shape as <code>/api/today</code> but for the next date.</p>
 
-        <h4>Query Parameters</h4>
-        <p class="params-none">None. Uses the server's current date + 1 day (Asia/Jakarta timezone).</p>
+        <h4 data-i18n="queryParams">Query Parameters</h4>
+        <p class="params-none" data-i18n="noParamsTomorrow">None. Uses the server's current date + 1 day (Asia/Jakarta timezone).</p>
 
-        <h4>Example Request</h4>
+        <h4 data-i18n="exampleRequest">Example Request</h4>
         <div class="code-block">
           <button class="copy-btn" aria-label="Copy curl">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -205,14 +214,14 @@
           <pre><code>curl https://api-hari-libur.com/api/tomorrow</code></pre>
         </div>
 
-        <h4>Example Response</h4>
+        <h4 data-i18n="exampleResponse">Example Response</h4>
         <div class="code-block">
           <button class="copy-btn" aria-label="Copy response">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
-            <span class="copy-label">Copy</span>
+            <span class="copy-label" data-i18n="copy">Copy</span>
           </button>
           <pre><code data-sample-json>{
   "date": "2025-01-02",
