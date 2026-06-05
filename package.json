@@ -3,27 +3,32 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd",
+      "sharp"
+    ]
+  },
   "scripts": {
-    "dev": "wrangler pages dev",
-    "deploy": "wrangler pages deploy",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src/ test/",
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "oxlint --tsconfig tsconfig.json src/ test/",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "wrangler pages deploy .output/public"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.4.3",
     "hono": "^4.7.0",
     "linkedom": "^0.18.9",
+    "nitro": "3.0.260603-beta",
+    "vite": "^8.0.16",
     "zod": "^3.24.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
-    "@eslint/js": "^10.0.1",
-    "@typescript-eslint/eslint-plugin": "^8.60.1",
-    "@typescript-eslint/parser": "^8.60.1",
-    "esbuild": "^0.28.0",
-    "eslint": "^10.4.1",
     "typescript": "^5.7.0",
     "vitest": "^4.1.8",
     "wrangler": "^3.101.0"

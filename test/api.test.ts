@@ -44,7 +44,7 @@ describe('API — /api endpoint', () => {
     const res = await app.request('/api?year=2026')
     expect(res.status).toBe(200)
 
-    const body = await res.json()
+    const body: any = await res.json()
     expect(Array.isArray(body)).toBe(true)
     expect(body.length).toBeGreaterThanOrEqual(2)
     expect(body[0]).toHaveProperty('date')
@@ -56,7 +56,7 @@ describe('API — /api endpoint', () => {
     const res = await app.request('/api?year=2026&month=2')
     expect(res.status).toBe(200)
 
-    const body = await res.json()
+    const body: any = await res.json()
     expect(body).toHaveLength(1)
     expect(body[0].date).toBe('2026-02-14')
   })
@@ -65,7 +65,7 @@ describe('API — /api endpoint', () => {
     const res = await app.request('/api?year=2000')
     expect(res.status).toBe(422)
 
-    const body = await res.json()
+    const body: any = await res.json()
     expect(body.message).toBe('The given data was invalid.')
   })
 
@@ -78,7 +78,7 @@ describe('API — /api endpoint', () => {
     const res = await app.request('/api?year=2026&day=15')
     expect(res.status).toBe(422)
 
-    const body = await res.json()
+    const body: any = await res.json()
     expect(body.errors?.month).toBeDefined()
   })
 
@@ -91,7 +91,7 @@ describe('API — /api endpoint', () => {
     const res = await app.request('/api')
     expect(res.status).toBe(200)
 
-    const body = await res.json()
+    const body: any = await res.json()
     expect(Array.isArray(body)).toBe(true)
   })
 
@@ -99,7 +99,7 @@ describe('API — /api endpoint', () => {
     const res = await app.request('/api?year=2026&month=1&day=1')
     expect(res.status).toBe(200)
 
-    const body = await res.json()
+    const body: any = await res.json()
     expect(body).toHaveProperty('date', '2026-01-01')
     expect(body).toHaveProperty('is_holiday', true)
     expect(body).toHaveProperty('holiday_list')
@@ -122,7 +122,7 @@ describe('API — /api/today', () => {
     const res = await app.request('/api/today')
     expect(res.status).toBe(200)
 
-    const body = await res.json()
+    const body: any = await res.json()
     expect(body).toHaveProperty('date')
     expect(body).toHaveProperty('is_holiday')
     expect(body).toHaveProperty('holiday_list')
@@ -146,7 +146,7 @@ describe('API — /api/tomorrow', () => {
     const res = await app.request('/api/tomorrow')
     expect(res.status).toBe(200)
 
-    const body = await res.json()
+    const body: any = await res.json()
     expect(body).toHaveProperty('date')
     expect(body).toHaveProperty('is_holiday')
     expect(body).toHaveProperty('holiday_list')
