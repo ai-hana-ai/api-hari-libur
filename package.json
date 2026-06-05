@@ -17,7 +17,7 @@
     "check": "oxlint --tsconfig tsconfig.json src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "wrangler pages deploy .output/public"
+    "deploy": "wrangler pages deploy"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.4.3",
