@@ -1,39 +1,55 @@
 # API Hari Libur Indonesia
 
+[![CI](https://github.com/ai-hana-ai/api-hari-libur/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-hana-ai/api-hari-libur/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-49%20passing-brightgreen)](https://github.com/ai-hana-ai/api-hari-libur)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
+[![Runtime](https://img.shields.io/badge/runtime-Cloudflare%20Workers-orange)](https://workers.cloudflare.com/)
+
 A free REST API for Indonesian public holidays (Hari Libur Nasional). Holiday data is scraped from [tanggalans.com](https://www.tanggalans.com/) and cached in-memory for fast responses.
+
+**Live demo:** [api-hari-libur.pages.dev](https://api-hari-libur.pages.dev)
 
 ## Tech Stack
 
-- **Runtime:** Cloudflare Workers
+- **Runtime:** Cloudflare Workers (via Pages Functions)
 - **Language:** TypeScript
 - **Framework:** [Hono](https://hono.dev/)
 - **Validation:** [Zod](https://zod.dev/) with `@hono/zod-validator`
 - **HTML Parsing:** [Linkedom](https://github.com/nicolo-ribaudo/linkedom)
-- **Testing:** Node.js built-in test runner (`node:test`)
+- **Testing:** [Vitest](https://vitest.dev/) — 49 tests
+- **Linting:** ESLint v10 + TypeScript-ESLint
+- **Deploy:** Cloudflare Pages with auto-deploy
 
 ## Project Structure
 
 ```
 api-hari-libur/
-├── functions/api/          # Cloudflare Pages Function (entry point)
-│   └── [[catchall]].ts
-├── public/                 # Static landing page (served by Pages)
+├── .github/workflows/
+│   └── ci.yml            # CI pipeline: lint, typecheck, test, deploy check
+├── functions/api/
+│   └── [[catchall]].ts    # Cloudflare Pages Function (entry point)
+├── public/                # Static landing page (served by Pages)
 │   ├── index.html
 │   ├── script.js
 │   └── style.css
 ├── src/
-│   ├── app.ts              # Hono app: routes, CORS, error handling
+│   ├── app.ts             # Hono app: routes, CORS, error handling
 │   ├── constants/
-│   │   └── month.ts        # Indonesian month name → number mapping
+│   │   └── month.ts       # Indonesian month name → number mapping
 │   ├── libraries/
-│   │   ├── holiday.ts      # Holiday logic: getHoliday, getHolidayDate
-│   │   └── scraper.ts      # Web scraper for tanggalans.com
+│   │   ├── holiday.ts     # Holiday logic: cache, filtering, date checks
+│   │   └── scraper.ts     # Web scraper for tanggalans.com
 │   ├── middleware/
-│   │   └── zod.ts          # Custom Zod validator wrapper
+│   │   └── zod.ts         # Custom Zod validator wrapper
 │   └── schema/
-│       └── date_schema.ts  # Zod schema for date query params
+│       └── date_schema.ts # Zod schema for date query params
 ├── test/
-│   └── schema.test.mjs     # Unit tests for date validation
+│   ├── api.test.ts        # API integration tests (Hono app.request)
+│   ├── constants.test.ts  # Month name constant tests
+│   ├── date_schema.test.ts# Date schema validation tests (24 cases)
+│   └── holiday.test.ts    # Holiday business logic tests (mocked scraper)
+├── eslint.config.js       # ESLint flat config
+├── vitest.config.ts       # Vitest configuration
 ├── wrangler.toml           # Cloudflare Workers config
 ├── tsconfig.json
 └── package.json
@@ -41,7 +57,7 @@ api-hari-libur/
 
 ## API Endpoints
 
-Base URL: `https://api-hari-libur.com`
+Base URL: `https://api-hari-libur.pages.dev`
 
 ### GET /api
 
@@ -58,7 +74,7 @@ Retrieve public holidays for a given year, optionally filtered by month and day.
 **Example Request:**
 
 ```bash
-curl https://api-hari-libur.com/api?year=2025&month=1
+curl https://api-hari-libur.pages.dev/api?year=2025&month=1
 ```
 
 **Example Response:**
@@ -81,7 +97,7 @@ curl https://api-hari-libur.com/api?year=2025&month=1
 When `day` is specified, returns a single-date object:
 
 ```bash
-curl "https://api-hari-libur.com/api?year=2025&month=1&day=1"
+curl "https://api-hari-libur.pages.dev/api?year=2025&month=1&day=1"
 ```
 
 ```json
@@ -99,90 +115,65 @@ Check if today is a public holiday. Uses the server's current date in the Asia/J
 
 **Query Parameters:** None.
 
-**Example Request:**
-
 ```bash
-curl https://api-hari-libur.com/api/today
-```
-
-**Example Response:**
-
-```json
-{
-  "date": "2025-01-01",
-  "is_holiday": true,
-  "is_national_holiday": true,
-  "holiday_list": ["Tahun Baru"]
-}
+curl https://api-hari-libur.pages.dev/api/today
 ```
 
 ### GET /api/tomorrow
 
-Check if tomorrow is a public holiday. Same response shape as `/api/today` but for the next date.
-
-**Query Parameters:** None.
-
-**Example Request:**
+Check if tomorrow is a public holiday.
 
 ```bash
-curl https://api-hari-libur.com/api/tomorrow
-```
-
-**Example Response:**
-
-```json
-{
-  "date": "2025-01-02",
-  "is_holiday": false,
-  "is_national_holiday": false,
-  "holiday_list": []
-}
+curl https://api-hari-libur.pages.dev/api/tomorrow
 ```
 
 ## Local Development
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/radyakaze/api-hari-libur.git
-   cd api-hari-libur
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start the local dev server:
-
-   ```bash
-   npm run dev
-   ```
-
-   The API will be accessible at `http://localhost:8788`.
-
-## Tests
-
-Run the unit tests with Node.js built-in test runner:
-
 ```bash
-node --experimental-vm-modules --test test/schema.test.mjs
+# 1. Clone
+git clone https://github.com/ai-hana-ai/api-hari-libur.git
+cd api-hari-libur
+
+# 2. Install dependencies
+npm install
+
+# 3. Start local dev server (API at http://localhost:8788)
+npm run dev
 ```
 
-## Type Check
+## Scripts
 
-```bash
-npm run typecheck
-```
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start local Wrangler dev server |
+| `npm run deploy` | Deploy to Cloudflare Pages |
+| `npm test` | Run 49 unit/integration tests (Vitest) |
+| `npm run typecheck` | TypeScript type checking (tsc --noEmit) |
+| `npm run lint` | ESLint check (src/ + test/) |
+
+## Test Coverage
+
+- **constants.test.ts** (5) — Month name mappings
+- **date_schema.test.ts** (24) — Date validation: year, month, day, edge cases
+- **holiday.test.ts** (9) — Cache logic, filtering, holiday detection (mocked scraper)
+- **api.test.ts** (11) — Full API integration via `app.request()` (mocked fetch)
+
+## CI Pipeline
+
+Every push to `main` triggers:
+
+1. **Type check** — `tsc --noEmit`
+2. **Lint** — ESLint (src/ + test/)
+3. **Test** — Vitest (49 tests)
+4. **Deploy validation** — `wrangler pages deploy --dry-run`
 
 ## Deploy
-
-Deploy to Cloudflare Pages:
 
 ```bash
 npm run deploy
 ```
+
+Deploys to Cloudflare Pages at **https://api-hari-libur.pages.dev**.
 
 ## License
 
