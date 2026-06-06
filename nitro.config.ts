@@ -7,7 +7,4 @@ export default defineConfig({
   cloudflare: {
     nodeCompat: true,
   },
-  alias: {
-    '@': '/src',
-  },
 })

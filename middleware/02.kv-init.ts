@@ -6,7 +6,7 @@ export default defineHandler(async (event) => {
   // @ts-ignore — runtime.cloudflare.env is injected by Nitro's cloudflare preset
   const env = event.req?.runtime?.cloudflare?.env
   if (env?.HOLIDAY_CACHE) {
-    const { initKvStorage } = await import('../src/libraries/holiday')
+    const { initKvStorage } = await import('../utils/holiday')
     await initKvStorage(env.HOLIDAY_CACHE)
   }
 })
