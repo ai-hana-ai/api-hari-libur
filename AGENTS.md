@@ -5,13 +5,11 @@
 ```mermaid
 flowchart LR
   CF[Cloudflare Pages<br/>dist/ via wrangler] --> Nitro["_worker.js<br/>Nitro v3"]
-  Nitro --> ST[server.ts]
-  ST --> Hono["src/app.ts<br/>Hono"]
-  Hono --> API["/api, /api/today, /api/tomorrow"]
-  Hono --> Schema["src/schema/date_schema.ts<br/>Zod validation"]
-  Hono --> Holiday["src/libraries/holiday.ts<br/>Cache + filter"]
-  Holiday --> Cache["in-memory Map /<br/>unstorage KV (planned)"]
-  Hono --> Scraper["src/libraries/scraper.ts<br/>linkedom HTML parser"]
+  Nitro --> Middleware["middleware/<br/>01.cors.ts<br/>02.kv-init.ts"]
+  Middleware --> Routes["routes/api/<br/>index.ts  today.ts  tomorrow.ts"]
+  Routes --> Holiday["src/libraries/holiday.ts<br/>Cache + filter"]
+  Holiday --> Cache["unstorage<br/>(memory / cloudflareKVBinding)"]
+  Routes --> Scraper["src/libraries/scraper.ts<br/>linkedom HTML parser"]
   Scraper --> Tanggalan["tanggalans.com"]
 ```
 
@@ -19,25 +17,26 @@ flowchart LR
 
 | File | What it does | Agent notes |
 |------|-------------|-------------|
-| `server.ts` | Nitro entry — re-exports Hono app | Nitro auto-detects this at root |
-| `vite.config.ts` | Vite config with Nitro plugin | `preset: cloudflare_pages` |
-| `nitro.config.ts` | Nitro config | `nodeCompat: true` for linkedom |
-| `src/app.ts` | Hono app (3 routes) | CORS + error handler included |
-| `src/schema/date_schema.ts` | Zod schema | `getMaxYear()` MUST be a function (build freeze) |
-| `src/libraries/holiday.ts` | Business logic + cache | In-memory Map, unique years per test |
+| `routes/api/index.ts` | `GET /api` — Zod validation via `utils/validation.ts` | `defineHandler` from nitro |
+| `routes/api/today.ts` | `GET /api/today` | Returns today's holidays |
+| `routes/api/tomorrow.ts` | `GET /api/tomorrow` | Returns tomorrow's holidays |
+| `middleware/01.cors.ts` | CORS headers via h3 `handleCors` | Preflight + regular handling |
+| `middleware/02.kv-init.ts` | KV storage init with binding object | Extracts binding from `event.req.runtime.cloudflare.env` |
+| `utils/validation.ts` | Zod → H3Error(422) wrapper | `zValidator(schema, data)` |
+| `src/libraries/holiday.ts` | Business logic + unstorage cache | `initKvStorage(binding)` for KV |
 | `src/libraries/scraper.ts` | HTML scraper | linkedom, uses `node:html` |
-| `dist/` | Build output | Nitro generates `_worker.js` + static assets |
+| `nitro.config.ts` | Nitro config | `scanDirs: ['.']` + `cloudflare_pages` preset |
+| `wrangler.toml` | Wrangler config | KV namespace `HOLIDAY_CACHE` |
 
 ## Commands
 
 | Command | Action |
 |---------|--------|
-| `pnpm dev` | Vite dev server (Nitro + HMR) on :3000 |
+| `pnpm dev` | Vite dev server (Nitro + HMR) on :3000 — uses memory driver |
 | `pnpm build` | Production build → `dist/` |
 | `pnpm test` | Vitest — 49 tests |
 | `pnpm deploy` | `wrangler pages deploy` → CF Pages |
 | `pnpm preview` | Preview build locally |
-| `vp dev` | Vite+ CLI (native binding issue on this VPS) |
 
 ## Vite+/Nitro Best Practices (For Agents)
 
@@ -62,6 +61,19 @@ export default defineConfig({
   preset: 'cloudflare_pages',
   cloudflare: { nodeCompat: true },
   alias: { '@': '/src' },
+  // Production: cloudflare KV binding
+  storage: {
+    holidays: {
+      driver: 'cloudflareKVBinding',
+      binding: 'HOLIDAY_CACHE',
+    },
+  },
+  // Dev: memory fallback
+  devStorage: {
+    holidays: {
+      driver: 'memory',
+    },
+  },
 })
 ```
 
@@ -76,33 +88,86 @@ export default defineConfig({
 ### Do
 
 - ✅ Always check `pnpm-workspace.yaml` has `allowBuilds` for `esbuild`, `workerd`, `sharp`
-- ✅ Use unique years per test (module-level cache persists across tests)
+- ✅ Use unique years per test (unstorage memory cache persists across tests)
 - ✅ For linkedom: `nodeCompat: true` in nitro.config.ts
 - ✅ Build check: `pnpm build && ls dist/_worker.js`
 - ✅ Type check: `npx tsc --noEmit` before commit
 
-## unstorage Integration (Planned)
+## unstorage Integration (Done ✅)
 
-Replace `holiday.ts` in-memory `Map` with unstorage:
+Holiday cache uses **`unstorage` with Cloudflare KV** in production and **memory** in dev/tests.
 
-```ts
-import { createStorage } from 'unstorage'
-import cloudflareKVBinding from 'unstorage/drivers/cloudflare-kv-binding'
-import memoryDriver from 'unstorage/drivers/memory'
+### Architecture
 
-export const storage = createStorage({
-  driver: import.meta.dev
-    ? memoryDriver()
-    : cloudflareKVBinding({ binding: 'HOLIDAY_CACHE' }),
-})
+```mermaid
+flowchart LR
+  Request --> Middleware["middleware app.use('*')"]
+  Middleware --> Binding["extract env.HOLIDAY_CACHE<br/>from c.req.raw.runtime.cloudflare.env"]
+  Binding --> Init["initKvStorage(binding)<br/>one-time: createStorage<br/>with cloudflareKVBinding driver"]
+  Init --> Storage["_storage = createStorage({<br/>  driver: cfDriver({ binding, base })<br/>})"]
+  Route["route handler"] --> getStorage["getStorage()<br/>returns _storage singleton"]
+  getStorage --> KV["getItem/setItem → Cloudflare KV"]
 ```
 
-Steps:
-1. `pnpm add unstorage`
-2. Create KV namespace in CF dashboard (e.g. `api-hari-libur-cache`)
-3. Add binding to `wrangler.toml`
-4. Create `.dev.vars` with `HOLIDAY_CACHE=local` for dev
-5. Replace `new Map()` calls with `storage.getItem`/`storage.setItem`
+### Initialization Flow
+
+```
+Worker boots → import holiday.ts
+  → _storage = null (lazy)
+  → First request arrives
+    → Middleware: c.req.raw.runtime.cloudflare.env
+      → env.HOLIDAY_CACHE exists?
+        → YES: initKvStorage(binding OBJECT)
+          → createStorage({ driver: cfDriver({ binding, base: 'api-hari-libur:' }) })
+          → _storage = KV-backed storage (one-time)
+        → NO (dev/test): getStorage() → memoryDriver()
+    → Route handler: getHoliday(year)
+      → getStorage() → _storage.getItem(year)
+        → KV: getKVBinding → uses binding OBJECT → works! ✅
+        → Memory: built-in driver → works! ✅
+```
+
+### Key Design Decisions
+
+| Aspect | Detail |
+|--------|--------|
+| **Binding access** | `c.req.raw.runtime.cloudflare.env.HOLIDAY_CACHE` — within event lifecycle ✅ |
+| **Driver init** | `initKvStorage(binding)` passes binding OBJECT (not string name) |
+| **Why not string binding?** | `cloudflareKVBinding` driver with string tries `globalThis.__env__[name]` which only works in Nitro's `scheduled` handler, not `fetch` |
+| **Why not useStorage config?** | Nitro storage config mounts driver with string name — same `globalThis.__env__` issue |
+| **Prefix** | `base: 'api-hari-libur:'` — clean KV keys |
+| **TTL** | Current year: 30 days (seconds). Past years: permanent. |
+| **Dev** | `initKvStorage` never called (no binding) → memory fallback |
+| **Tests** | Dynamic import fails → memory fallback in `getStorage()` |
+
+### Code
+
+```ts
+// src/libraries/holiday.ts — KV init with binding object
+export async function initKvStorage(binding: any) {
+  if (_storage) return
+  const { default: cfDriver } = await import('unstorage/drivers/cloudflare-kv-binding')
+  _storage = createStorage({
+    driver: cfDriver({ binding, base: 'api-hari-libur:' }),
+  })
+}
+
+function getStorage(): Storage {
+  if (!_storage) _storage = createStorage({ driver: memoryDriver() })
+  return _storage
+}
+```
+
+```ts
+// src/app.ts — middleware (follows event lifecycle)
+app.use('*', async (c, next) => {
+  const env = (c.req.raw as any).runtime?.cloudflare?.env
+  if (env?.HOLIDAY_CACHE) {
+    await initKvStorage(env.HOLIDAY_CACHE)
+  }
+  await next()
+})
+```
 
 ## CI Pipeline (`.github/workflows/ci.yml`)
 
@@ -120,13 +185,15 @@ steps:
 
 - `api.test.ts`: mocks `globalThis.fetch` via `vi.stubGlobal()`
 - `holiday.test.ts`: mocks `crawler` via `vi.mock()`
-- All tests must use **unique years** (cache pollution)
+- All tests must use **unique years** (unstorage memory cache persists across tests)
 - Vitest config lives in `vite.config.ts` — no separate vitest config file
-- Test timeout: 10s (enough for mocked tests)
+- Cache tests verify that `storage.getItem` returns cached data (async, works with unstorage)
 
 ## Deployment
 
 `pnpm deploy` → wrangler reads `wrangler.toml` → `pages_build_output_dir = "dist"` → uploads to Cloudflare Pages.
+
+KV namespace `HOLIDAY_CACHE` (id: `670c1bf9959b404f8c2650668969f74c`) — created via `wrangler kv namespace create`.
 
 Production URL: https://api-hari-libur.pages.dev
 Preview URL format: `https://{hash}.api-hari-libur.pages.dev`

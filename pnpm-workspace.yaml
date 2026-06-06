@@ -1,4 +1,8 @@
+# pnpm v11 — build allowlist via package.json `pnpm.onlyBuiltDependencies`
+
 allowBuilds:
   esbuild: true
-  workerd: true
   sharp: true
+  workerd: true
+patchedDependencies:
+  nitro@3.0.260603-beta: patches/nitro@3.0.260603-beta.patch

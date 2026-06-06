@@ -1,30 +1,28 @@
-import { crawler } from '../libraries/scraper'
+import { createStorage, type Storage } from 'unstorage'
+import memoryDriver from 'unstorage/drivers/memory'
+import { crawler } from './scraper'
 
 type Holiday = { name: string; date: string }
 
-// In-memory cache replacing Deno.Kv
-interface CacheEntry {
-  data: Holiday[]
-  expiresAt: number | null
+let _storage: Storage | null = null
+
+// Called once from middleware on first request (production only)
+// Uses the KV binding object directly — no globalThis.__env__ needed
+export async function initKvStorage(binding: any) {
+  if (_storage) return // already initialized
+
+  const { default: cfDriver } = await import('unstorage/drivers/cloudflare-kv-binding')
+  _storage = createStorage({
+    driver: cfDriver({ binding, base: 'api-hari-libur:' }),
+  }) as unknown as Storage
 }
 
-const cache = new Map<string, CacheEntry>()
-
-const getCached = (key: string): Holiday[] | null => {
-  const entry = cache.get(key)
-  if (!entry) return null
-  if (entry.expiresAt !== null && Date.now() > entry.expiresAt) {
-    cache.delete(key)
-    return null
+function getStorage(): Storage {
+  if (!_storage) {
+    // Dev / tests — memory fallback
+    _storage = createStorage({ driver: memoryDriver() })
   }
-  return entry.data
-}
-
-const setCached = (key: string, data: Holiday[], ttlMs?: number): void => {
-  cache.set(key, {
-    data,
-    expiresAt: ttlMs ? Date.now() + ttlMs : null,
-  })
+  return _storage
 }
 
 export const getHoliday = async (
@@ -75,7 +73,8 @@ export const getHolidayDate = async (
 export const getHolidayYearly = async (
   year: string
 ): Promise<Holiday[]> => {
-  const cached = getCached(year)
+  const storage = getStorage()
+  const cached = await storage.getItem<Holiday[]>(year)
 
   if (cached) return cached
 
@@ -84,19 +83,20 @@ export const getHolidayYearly = async (
   if (data.length === 0) return data
 
   const currentYear = new Date().getFullYear()
-  const ttlMs = Number(year) >= currentYear
-    ? 1000 * 60 * 60 * 24 * 30
+  const ttlSec = Number(year) >= currentYear
+    ? 60 * 60 * 24 * 30  // 30 days in seconds (KV-compatible)
     : undefined
 
-  setCached(year, data, ttlMs)
+  await storage.setItem(year, data, { ttl: ttlSec })
 
   return data
 }
 
-const getData = (year: string): Promise<Holiday[]> => {
+const getData = async (year: string): Promise<Holiday[]> => {
   try {
-    return crawler(year)
-  } catch {
-    return Promise.resolve([])
+    return await crawler(year)
+  } catch (error) {
+    console.error('[getData] Scraper failed:', error)
+    return []
   }
 }

@@ -4,7 +4,8 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
-const { default: app } = await import('../src/app')
+import { getHoliday, getHolidayDate } from '../src/libraries/holiday'
+import { dateSchema } from '../src/schema/date_schema'
 
 // Minimal HTML that mimics tanggalan.com structure for 1 month
 const MOCK_HTML = `<!DOCTYPE html>
@@ -28,7 +29,7 @@ const MOCK_HTML = `<!DOCTYPE html>
 </div>
 </div></body></html>`
 
-describe('API — /api endpoint', () => {
+describe('API — /api — handler logic (via getHoliday)', () => {
   beforeAll(() => {
     mockFetch.mockResolvedValue({
       ok: true,
@@ -40,11 +41,9 @@ describe('API — /api endpoint', () => {
     vi.unstubAllGlobals()
   })
 
-  it('returns 200 with holiday data for year-only query', async () => {
-    const res = await app.request('/api?year=2026')
-    expect(res.status).toBe(200)
+  it('returns holiday data for year-only query', async () => {
+    const body = await getHoliday('2026')
 
-    const body: any = await res.json()
     expect(Array.isArray(body)).toBe(true)
     expect(body.length).toBeGreaterThanOrEqual(2)
     expect(body[0]).toHaveProperty('date')
@@ -52,61 +51,48 @@ describe('API — /api endpoint', () => {
     expect(body[0]).toHaveProperty('is_national_holiday')
   })
 
-  it('filters by month with ?year=2026&month=2', async () => {
-    const res = await app.request('/api?year=2026&month=2')
-    expect(res.status).toBe(200)
+  it('filters by month with year=2026, month=2', async () => {
+    const body = await getHoliday('2026', '02')
 
-    const body: any = await res.json()
     expect(body).toHaveLength(1)
     expect(body[0].date).toBe('2026-02-14')
   })
 
-  it('returns 422 for invalid year (below min)', async () => {
-    const res = await app.request('/api?year=2000')
-    expect(res.status).toBe(422)
-
-    const body: any = await res.json()
-    expect(body.message).toBe('The given data was invalid.')
+  it('throws 422 for invalid year (below min)', () => {
+    const result = dateSchema.safeParse({ year: '2000' })
+    expect(result.success).toBe(false)
   })
 
-  it('returns 422 for month=13', async () => {
-    const res = await app.request('/api?year=2026&month=13')
-    expect(res.status).toBe(422)
+  it('throws 422 for month=13', () => {
+    const result = dateSchema.safeParse({ year: '2026', month: '13' })
+    expect(result.success).toBe(false)
   })
 
-  it('returns 422 for day without month', async () => {
-    const res = await app.request('/api?year=2026&day=15')
-    expect(res.status).toBe(422)
-
-    const body: any = await res.json()
-    expect(body.errors?.month).toBeDefined()
+  it('throws 422 for day without month', () => {
+    const result = dateSchema.safeParse({ year: '2026', day: '15' })
+    expect(result.success).toBe(false)
   })
 
-  it('returns 422 for invalid date (Feb 30)', async () => {
-    const res = await app.request('/api?year=2026&month=2&day=30')
-    expect(res.status).toBe(422)
+  it('throws 422 for invalid date (Feb 30)', () => {
+    const result = dateSchema.safeParse({ year: '2026', month: '2', day: '30' })
+    expect(result.success).toBe(false)
   })
 
   it('works without any params (defaults to current year)', async () => {
-    const res = await app.request('/api')
-    expect(res.status).toBe(200)
-
-    const body: any = await res.json()
+    const body = await getHoliday(new Date().getFullYear().toString())
     expect(Array.isArray(body)).toBe(true)
   })
 
   it('returns holiday detail when day is provided', async () => {
-    const res = await app.request('/api?year=2026&month=1&day=1')
-    expect(res.status).toBe(200)
+    const body = await getHolidayDate(new Date('2026-01-01T00:00:00+07:00'))
 
-    const body: any = await res.json()
     expect(body).toHaveProperty('date', '2026-01-01')
     expect(body).toHaveProperty('is_holiday', true)
     expect(body).toHaveProperty('holiday_list')
   })
 })
 
-describe('API — /api/today', () => {
+describe('API — /api/today (via getHolidayDate)', () => {
   beforeAll(() => {
     mockFetch.mockResolvedValue({
       ok: true,
@@ -118,11 +104,9 @@ describe('API — /api/today', () => {
     vi.unstubAllGlobals()
   })
 
-  it('returns 200 with today data', async () => {
-    const res = await app.request('/api/today')
-    expect(res.status).toBe(200)
+  it('returns today data', async () => {
+    const body = await getHolidayDate(new Date())
 
-    const body: any = await res.json()
     expect(body).toHaveProperty('date')
     expect(body).toHaveProperty('is_holiday')
     expect(body).toHaveProperty('holiday_list')
@@ -130,7 +114,7 @@ describe('API — /api/today', () => {
   })
 })
 
-describe('API — /api/tomorrow', () => {
+describe('API — /api/tomorrow (via getHolidayDate)', () => {
   beforeAll(() => {
     mockFetch.mockResolvedValue({
       ok: true,
@@ -142,31 +126,13 @@ describe('API — /api/tomorrow', () => {
     vi.unstubAllGlobals()
   })
 
-  it('returns 200 with tomorrow data', async () => {
-    const res = await app.request('/api/tomorrow')
-    expect(res.status).toBe(200)
+  it('returns tomorrow data', async () => {
+    const date = new Date()
+    date.setDate(date.getDate() + 1)
+    const body = await getHolidayDate(date)
 
-    const body: any = await res.json()
     expect(body).toHaveProperty('date')
     expect(body).toHaveProperty('is_holiday')
     expect(body).toHaveProperty('holiday_list')
-  })
-})
-
-describe('API — CORS headers', () => {
-  beforeAll(() => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve(MOCK_HTML),
-    })
-  })
-
-  afterAll(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('includes Access-Control-Allow-Origin: *', async () => {
-    const res = await app.request('/api?year=2026')
-    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
   })
 })

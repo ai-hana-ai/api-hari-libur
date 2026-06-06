@@ -1,0 +1,23 @@
+diff --git a/dist/vite.mjs b/dist/vite.mjs
+index 53a0192d7c1e8768e02f0df6ea24dd71a8bce2ac..6b5f61aab86db47888c54bef225547405d14c4dd 100644
+--- a/dist/vite.mjs
++++ b/dist/vite.mjs
+@@ -39,9 +39,9 @@ const getBundlerConfig = async (ctx) => {
+ 		}, nitro.options.rolldownConfig, nitro.options.rollupConfig, commonConfig);
+ 		const outputConfig = rolldownConfig.output;
+ 		if (outputConfig.inlineDynamicImports || outputConfig.format === "iife") {
+-			delete outputConfig.inlineDynamicImports;
+ 			outputConfig.codeSplitting = false;
+ 		}
++		delete outputConfig.inlineDynamicImports;
+ 		return {
+ 			base,
+ 			rolldownConfig
+@@ -61,6 +61,7 @@ const getBundlerConfig = async (ctx) => {
+ 		}, nitro.options.rolldownConfig, nitro.options.rollupConfig, commonConfig);
+ 		const outputConfig = rollupConfig.output;
+ 		if (outputConfig.inlineDynamicImports || outputConfig.format === "iife") delete outputConfig.manualChunks;
++		delete outputConfig.inlineDynamicImports;
+ 		return {
+ 			base,
+ 			rollupConfig

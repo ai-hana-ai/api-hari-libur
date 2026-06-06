@@ -1,3 +1,7 @@
 name = "api-hari-libur"
 compatibility_date = "2025-01-01"
 pages_build_output_dir = "dist"
+
+[[kv_namespaces]]
+binding = "HOLIDAY_CACHE"
+id = "670c1bf9959b404f8c2650668969f74c"
