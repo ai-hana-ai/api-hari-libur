@@ -169,16 +169,12 @@
       langToggle.setAttribute('aria-label', t('langToggleLabel'));
     }
 
-    // Update html lang attribute
     document.documentElement.setAttribute('lang', currentLang);
 
-    // Update month names in dropdown
     updateMonthOptions();
 
-    // Update dropdown placeholders
     updateDropdownPlaceholders();
 
-    // Update select aria-labels
     var yearSel = document.getElementById('inputYear');
     var monthSel = document.getElementById('inputMonth');
     var daySel = document.getElementById('inputDay');

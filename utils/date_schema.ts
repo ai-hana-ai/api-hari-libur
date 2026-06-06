@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-// IMPORTANT: This MUST be a function call, not a const assignment.
+// This MUST be a function call, not a const assignment.
 // Wrangler/esbuild evaluates top-level module code at build time and freezes
 // values like `new Date().getFullYear()` as literal constants in the bundle.
 // Calling getMaxYear() inside the request handler (or superRefine callback)
