@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  nitro@3.0.260603-beta: ddb6aa8548a3995554ae03ecfd40484de81fc70763659ee422aec9b4891933cf
-
 importers:
 
   .:
@@ -19,7 +16,7 @@ importers:
         version: 0.18.12
       nitro:
         specifier: 3.0.260603-beta
-        version: 3.0.260603-beta(patch_hash=ddb6aa8548a3995554ae03ecfd40484de81fc70763659ee422aec9b4891933cf)(chokidar@5.0.0)(lru-cache@11.5.1)(vite@8.0.16(esbuild@0.17.19))
+        version: 3.0.260603-beta(chokidar@5.0.0)(lru-cache@11.5.1)(vite@8.0.16(esbuild@0.17.19))
       unstorage:
         specifier: ^1.17.5
         version: 1.17.5(db0@0.3.4)
@@ -2113,7 +2110,7 @@ snapshots:
 
   nf3@0.3.17: {}
 
-  nitro@3.0.260603-beta(patch_hash=ddb6aa8548a3995554ae03ecfd40484de81fc70763659ee422aec9b4891933cf)(chokidar@5.0.0)(lru-cache@11.5.1)(vite@8.0.16(esbuild@0.17.19)):
+  nitro@3.0.260603-beta(chokidar@5.0.0)(lru-cache@11.5.1)(vite@8.0.16(esbuild@0.17.19)):
     dependencies:
       consola: 3.4.2
       crossws: 0.4.5(srvx@0.11.16)
