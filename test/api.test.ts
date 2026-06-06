@@ -4,8 +4,8 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
-import { getHoliday, getHolidayDate } from '../src/libraries/holiday'
-import { dateSchema } from '../src/schema/date_schema'
+import { getHoliday, getHolidayDate } from '../utils/holiday'
+import { dateSchema } from '../utils/date_schema'
 
 // Minimal HTML that mimics tanggalan.com structure for 1 month
 const MOCK_HTML = `<!DOCTYPE html>

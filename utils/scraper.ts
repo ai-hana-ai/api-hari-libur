@@ -1,5 +1,5 @@
 import { parseHTML } from 'linkedom'
-import { MONTH_NAME } from '../constants/month'
+import { MONTH_NAME } from './constants'
 
 type Holiday = { date: string; name: string }
 

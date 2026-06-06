@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock the crawler before module import
 const mockCrawler = vi.fn()
-vi.mock('../src/libraries/scraper', () => ({
+vi.mock('../utils/scraper', () => ({
   crawler: mockCrawler,
 }))
 
 // Dynamically import so mock is in effect
-const { getHoliday, getHolidayDate, getHolidayYearly } = await import('../src/libraries/holiday')
+const { getHoliday, getHolidayDate, getHolidayYearly } = await import('../utils/holiday')
 
 /**
  * NOTE: holiday.ts has an in-memory Map cache at module level.

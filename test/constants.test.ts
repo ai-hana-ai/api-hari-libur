@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { MONTH_NAME } from '../src/constants/month'
+import { MONTH_NAME } from '../utils/constants'
 
 describe('MONTH_NAME', () => {
   it('should have 12 months in Indonesian', () => {

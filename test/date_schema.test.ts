@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dateSchema, getMaxYear } from '../src/schema/date_schema'
+import { dateSchema, getMaxYear } from '../utils/date_schema'
 
 const currentYear = new Date().getFullYear()
 const maxYear = currentYear + 1

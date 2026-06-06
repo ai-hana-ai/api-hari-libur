@@ -1,7 +1,7 @@
 import { defineHandler } from 'nitro'
 import { getQuery, createError } from 'nitro/h3'
-import { getHoliday, getHolidayDate } from '../../src/libraries/holiday'
-import { dateSchema } from '../../src/schema/date_schema'
+import { getHoliday, getHolidayDate } from '../../utils/holiday'
+import { dateSchema } from '../../utils/date_schema'
 import { zValidator } from '../../utils/validation'
 
 export default defineHandler(async (event) => {
