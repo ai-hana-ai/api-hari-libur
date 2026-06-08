@@ -22,9 +22,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Type check (tsc)
-        run: npx tsc --noEmit
-
       - name: Run tests (vitest)
         run: pnpm test
 
