@@ -13,51 +13,73 @@ flowchart LR
   Scraper --> Tanggalan["tanggalans.com"]
 ```
 
+## Project Structure
+
+```
+api-hari-libur/
+├── .github/workflows/
+│   └── ci.yml                  # CI: pnpm test → pnpm build
+├── plugins/
+│   └── kv-init.ts              # Nitro plugin — KV storage mount via globalThis
+├── public/                     # Static assets (served at /)
+│   ├── index.html              # Landing page + Try It Live
+│   ├── script.js               # Landing page interactivity
+│   ├── style.css               # Landing page styles
+│   └── favicon.ico
+├── routes/api/
+│   ├── index.ts                # GET /api — year, month, day query
+│   ├── today.ts                # GET /api/today
+│   └── tomorrow.ts             # GET /api/tomorrow
+├── test/
+│   ├── api.test.ts             # Integration tests (mocked fetch)
+│   ├── constants.test.ts       # Month name mapping tests
+│   ├── date_schema.test.ts     # Zod schema validation tests
+│   └── holiday.test.ts         # Business logic tests (mocked scraper)
+├── utils/
+│   ├── constants.ts            # MONTH_NAME: Indonesian month → number
+│   ├── date_schema.ts          # Zod schema — dynamic getMaxYear()
+│   ├── holiday.ts              # Business logic: unstorage cache + filter
+│   ├── scraper.ts              # HTML scraper (linkedom → tanggalans.com)
+│   └── validation.ts           # Zod → H3Error(422) wrapper
+├── nitro.config.ts             # Nitro config: plugins, routeRules, imports
+├── vite.config.ts              # Vite + Nitro plugin
+├── wrangler.toml               # Cloudflare Pages config + KV binding
+├── tsconfig.json
+├── pnpm-workspace.yaml         # pnpm allowBuilds
+├── package.json
+└── .dev.vars                   # Local secrets (gitignored)
+```
+
 ## Key Files
 
-| File | What it does | Agent notes |
-|------|-------------|-------------|
-| `plugins/kv-init.ts` | KV storage init via `useStorage().mount()` | Explicit imports `definePlugin` + `useStorage` from nitro |
-| `routes/api/index.ts` | `GET /api` — Zod validation via `utils/validation.ts` | `defineHandler` from nitro |
-| `routes/api/today.ts` | `GET /api/today` | Returns today's holidays |
-| `routes/api/tomorrow.ts` | `GET /api/tomorrow` | Returns tomorrow's holidays |
-| `utils/validation.ts` | Zod → H3Error(422) wrapper | `zValidator(schema, data)` |
-| `utils/holiday.ts` | Business logic + unstorage cache | Reads from `globalThis.__holidayStorage` |
-| `utils/scraper.ts` | HTML scraper | linkedom, parses tanggalans.com |
-| `utils/constants.ts` | Month name mapping | `MONTH_NAME` object |
-| `nitro.config.ts` | Nitro config | `scanDirs: ['routes', 'middleware', 'utils']` |
-| `wrangler.toml` | Wrangler config | KV namespace `HOLIDAY_CACHE` |
+| File | Purpose | Notes |
+|------|---------|-------|
+| `plugins/kv-init.ts` | KV storage init | Nitro plugin, mounts on first request |
+| `routes/api/index.ts` | `GET /api` | Zod validation, year/month/day params |
+| `routes/api/today.ts` | `GET /api/today` | Asia/Jakarta timezone |
+| `routes/api/tomorrow.ts` | `GET /api/tomorrow` | +1 day from today |
+| `utils/holiday.ts` | Business logic | Cache read/write + scraper fallback |
+| `utils/scraper.ts` | HTML scraper | AbortSignal.timeout(10s), 512KB cap |
+| `utils/validation.ts` | Zod wrapper | Throws H3Error 422 on validation fail |
+| `utils/date_schema.ts` | Zod schema | `getMaxYear()` — not top-level `new Date()` |
+| `utils/constants.ts` | Month mapping | Indonesian → `'01'`–`'12'` |
+| `nitro.config.ts` | Nitro config | routeRules, scanDirs, imports.exclude |
 
 ## Commands
 
 | Command | Action |
 |---------|--------|
-| `pnpm dev` | Vite dev server (Nitro + HMR) on :3000 — uses memory driver |
+| `pnpm dev` | Vite dev server on :3000 — memory driver |
+| `pnpm test` | Vitest — 48 tests |
 | `pnpm build` | Production build → `dist/` |
-| `pnpm test` | Vitest — 96 tests |
 | `pnpm deploy` | `wrangler pages deploy` → CF Pages |
 | `pnpm preview` | Preview build locally |
 
-## Vite+/Nitro Best Practices (For Agents)
+## Config Files
 
-### Config
-
-```ts
-// vite.config.ts — KEEP THIS
-import { defineConfig } from 'vite'
-import { nitro } from 'nitro/vite'
-
-export default defineConfig({
-  plugins: [nitro({ preset: 'cloudflare_pages' })],
-  resolve: { alias: { '@': '/src' } },
-  test: {
-    // Vitest config lives here — no separate vitest.config.ts
-  }
-})
-```
+### nitro.config.ts
 
 ```ts
-// nitro.config.ts — KEEP THIS
 import { defineConfig } from 'nitro'
 export default defineConfig({
   compatibilityDate: '2025-04-01',
@@ -66,7 +88,7 @@ export default defineConfig({
   scanDirs: ['routes'],
   imports: {
     dirs: ['utils'],
-    exclude: [/useStorage/],  // see "useStorage collision" section below
+    exclude: [/useStorage/],  // avoid Rolldown naming collision
   },
   routeRules: {
     '/api/**': {
@@ -78,148 +100,124 @@ export default defineConfig({
       },
     },
   },
-  rollupConfig: {
-    output: { inlineDynamicImports: true },
-  },
+  rollupConfig: { output: { inlineDynamicImports: true } },
   cloudflare: { nodeCompat: true },
 })
 ```
 
-### Do NOT
+### vite.config.ts
 
-- ❌ Set `serverEntry` in vite.config.ts — Nitro auto-detects `server.ts`
-- ❌ Set `serverDir` in nitro.config.ts — `server.ts` IS the entry
-- ❌ Use top-level `new Date()` — build cache freezes it (use function!)
-- ❌ Install `vitest` separately — it's bundled with Vite+; use `test:` block in vite.config.ts
-- ❌ Use `.output/public/` — Nitro v3 outputs to `dist/`
-- ❌ Use `initKvStorage()` — removed, plugin handles KV init now
+```ts
+import { defineConfig } from 'vite'
+import { nitro } from 'nitro/vite'
 
-### Do
-
-- ✅ Always check `pnpm-workspace.yaml` has `allowBuilds` for `esbuild`, `workerd`, `sharp`
-- ✅ Use unique years per test (unstorage memory cache persists across tests)
-- ✅ For linkedom: `nodeCompat: true` in nitro.config.ts
-- ✅ Build check: `pnpm build && ls dist/_worker.js`
-- ✅ Type check: `npx tsc --noEmit` before commit
-
-## KV Storage Integration (Done ✅)
-
-Holiday cache uses **`unstorage` with Cloudflare KV** in production and **memory** in dev/tests.
-
-### Architecture
-
-```mermaid
-flowchart LR
-  Request --> Plugin["plugins/kv-init.ts<br/>definePlugin hook"]
-  Plugin --> Binding["extract env.HOLIDAY_CACHE<br/>from event.req.runtime.cloudflare.env"]
-  Binding --> Mount["useStorage().mount('holidays',<br/>cfDriver({ binding, base }))"]
-  Mount --> Scoped["useStorage('holidays')<br/>→ prefixStorage(root, 'holidays')"]
-  Scoped --> GlobalThis["globalThis.__holidayStorage<br/>= scoped storage"]
-  Route["route handler"] --> GetStorage["getStorage()<br/>reads globalThis or memory fallback"]
-  GetStorage --> KV["getItem/setItem → Cloudflare KV"]
+export default defineConfig({
+  plugins: [nitro({ preset: 'cloudflare_pages' })],
+})
 ```
+
+### wrangler.toml
+
+```toml
+name = "api-hari-libur"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "dist"
+
+[[kv_namespaces]]
+binding = "HOLIDAY_CACHE"
+id = "670c1bf9959b404f8c2650668969f74c"
+```
+
+## KV Storage Integration
+
+Holiday cache uses **unstorage with Cloudflare KV** in production and **memory** in dev/tests.
 
 ### Initialization Flow
 
 ```
-Worker boots
-  → Plugin loaded via #nitro/virtual/plugins
-  → First request arrives
-    → Plugin request hook fires
-      → env.HOLIDAY_CACHE exists?
-        → YES: useStorage().mount("holidays", cfDriver({ binding, base: 'api-hari-libur:' }))
-          → useStorage("holidays") → scoped storage
-          → globalThis.__holidayStorage = scoped storage
-        → NO (dev/test): no mount, no globalThis set
-    → Route handler: getHoliday(year)
-      → getStorage() → globalThis.__holidayStorage || memoryDriver()
-      → storage.getItem(year)
-        → KV: mounted driver → Cloudflare KV key "api-hari-libur:<year>" ✅
-        → Memory: built-in driver → works ✅
+Worker boots → Plugin loaded via #nitro/virtual/plugins
+  → First request arrives → Plugin request hook fires
+    → env.HOLIDAY_CACHE exists?
+      → YES: useStorage().mount("holidays", cfDriver({ binding, base: 'api-hari-libur:' }))
+        → globalThis.__holidayStorage = useStorage("holidays")
+      → NO (dev/test): no mount → memory fallback
+  → Route handler → getStorage() → globalThis.__holidayStorage || memoryDriver()
 ```
 
 ### useStorage Collision (Rolldown)
 
-**Problem:** `useStorage` from explicit import (`nitro/storage`) and auto-imported `useStorage` resolve to different module paths in Rolldown pipeline → Rolldown renames one to `useStorage$1`.
+**Problem:** `useStorage` from explicit import (`nitro/storage`) and auto-imported `useStorage` resolve to different module paths → Rolldown renames one to `useStorage$1`.
 
 **Fix:**
-1. `nitro.config.ts`: `imports.exclude: [/useStorage/]` — prevents auto-injection
+1. `nitro.config.ts`: `imports.exclude: [/useStorage/]`
 2. `plugins/kv-init.ts`: explicit `import { useStorage } from "nitro/storage"`
-3. `utils/holiday.ts`: reads from `globalThis.__holidayStorage` (no `useStorage` import needed — virtual module doesn't resolve in Vitest)
+3. `utils/holiday.ts`: reads from `globalThis.__holidayStorage` (no `useStorage` import)
 
 ### Key Design Decisions
 
-| Aspect | Detail |
-|--------|--------|
-| **Binding access** | `event.req.runtime.cloudflare.env.HOLIDAY_CACHE` — within event lifecycle ✅ |
-| **Driver init** | Plugin: `useStorage().mount("holidays", cfDriver({ binding }))` — passes binding OBJECT |
-| **Why not string binding?** | `cloudflareKVBinding` driver with string tries `globalThis.__env__[name]` — only works in `scheduled` handler, not `fetch` |
-| **Why not useStorage config?** | Nitro storage config uses string binding — same `globalThis.__env__` issue |
-| **Why explicit imports in plugin?** | Plugin files bypass auto-import (not in scanDirs). Virtual module `#nitro/virtual/plugins` strips injected imports during bundling |
-| **Prefix** | `base: 'api-hari-libur:'` — clean KV keys |
-| **TTL** | Current year: 30 days. Past years: permanent. |
-| **Dev** | Plugin hook fires but no binding → no mount → memory fallback |
-| **Tests** | `globalThis.__holidayStorage` not set → `getStorage()` → memoryDriver() |
+| Decision | Why |
+|----------|-----|
+| Plugin-based KV init | `useStorage` config uses string binding → fails in `fetch` handler |
+| `globalThis.__holidayStorage` | Avoids import collision, works in Vitest (memory fallback) |
+| `base: 'api-hari-libur:'` | Clean KV keys, no namespace collision |
+| `AbortSignal.timeout(10s)` | Prevents scraper from blocking worker |
+| 512KB response cap | Protects 128MB memory limit |
+| `nodeCompat: true` | Required for linkedom |
 
-### Code
+## Route Rules (CORS + Cache)
 
-```ts
-// plugins/kv-init.ts — KV init via Nitro plugin
-import { definePlugin } from "nitro";
-import { useStorage } from "nitro/storage";
-import cfDriver from "unstorage/drivers/cloudflare-kv-binding";
-
-export default definePlugin((nitroApp) => {
-  nitroApp.hooks.hook("request", (event) => {
-    if ((globalThis as any).__holidayStorage) return;
-    const env = event.req?.runtime?.cloudflare?.env;
-    const binding = env?.HOLIDAY_CACHE;
-    if (binding) {
-      const storage = useStorage();
-      storage.mount("holidays", cfDriver({ binding, base: "api-hari-libur:" }));
-      (globalThis as any).__holidayStorage = useStorage("holidays");
-    }
-  });
-});
-```
+CORS and cache headers handled via `routeRules` — no middleware needed:
 
 ```ts
-// utils/holiday.ts — storage accessor
-function getStorage(): Storage {
-  if (_storage) return _storage;
-  const kvStorage = (globalThis as any).__holidayStorage;
-  if (kvStorage) { _storage = kvStorage; return _storage; }
-  _storage = createStorage({ driver: memoryDriver() });  // dev/tests
-  return _storage;
+routeRules: {
+  '/api/**': {
+    cors: true,
+    headers: {
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Accept, Content-Type',
+      'Cache-Control': 'public, max-age=300, s-maxage=3600',
+    },
+  },
 }
 ```
 
-## CI Pipeline (`.github/workflows/ci.yml`)
+Historical data overrides in route handler: `s-maxage=2592000, immutable` (30 days).
+
+## CI Pipeline
 
 ```yaml
+# .github/workflows/ci.yml
 steps:
-  - pnpm/action-setup@v4
+  - pnpm/action-setup@v4          # reads packageManager field
   - actions/setup-node@v4 (cache: pnpm)
   - pnpm install
-  - npx tsc --noEmit    # type check
-  - pnpm test           # vitest (96 tests)
-  - pnpm build          # vite build (Nitro + Rolldown)
+  - pnpm test                     # vitest — 48 tests
+  - pnpm build                    # vite build (Nitro + Rolldown)
 ```
+
+Note: `tsc --noEmit` removed — Nitro v3 beta doesn't generate standalone `.d.ts` files. Build + tests validate correctness.
 
 ## Testing Notes
 
 - `api.test.ts`: mocks `globalThis.fetch` via `vi.stubGlobal()`
 - `holiday.test.ts`: mocks `crawler` via `vi.mock()`
-- All tests must use **unique years** (unstorage memory cache persists across tests)
-- Vitest config lives in `vite.config.ts` — no separate vitest config file
-- Cache tests verify that `storage.getItem` returns cached data (async, works with unstorage)
-- `nitro/storage` is a virtual module — NOT available in Vitest. Always use memory fallback in test paths.
+- All tests use **unique years** (unstorage memory cache persists across tests)
+- Vitest config in `vite.config.ts` — no separate vitest config
+- `nitro/storage` is virtual module — NOT available in Vitest, always use memory fallback
+
+## Pitfalls
+
+- ❌ Top-level `new Date()` — build cache freezes it (use function)
+- ❌ `serverEntry` in vite.config.ts — Nitro auto-detects `server.ts`
+- ❌ `.output/public/` — Nitro v3 outputs to `dist/`
+- ❌ `initKvStorage()` — removed, plugin handles KV init
+- ❌ Separate `vitest` install — bundled with Vite+, use `test:` block
+- ❌ `version: latest` in `pnpm/action-setup@v4` — reads from `packageManager` field instead
 
 ## Deployment
 
-`pnpm deploy` → wrangler reads `wrangler.toml` → `pages_build_output_dir = "dist"` → uploads to Cloudflare Pages.
+`pnpm deploy` → wrangler reads `wrangler.toml` → uploads `dist/` to Cloudflare Pages.
 
-KV namespace `HOLIDAY_CACHE` (id: `670c1bf9959b404f8c2650668969f74c`) — created via `wrangler kv namespace create`.
+KV namespace: `HOLIDAY_CACHE` (id: `670c1bf9959b404f8c2650668969f74c`)
 
-Production URL: https://api-hari-libur.pages.dev
-Preview URL format: `https://{hash}.api-hari-libur.pages.dev`
+Production: https://api-hari-libur.pages.dev
