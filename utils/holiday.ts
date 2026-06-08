@@ -9,7 +9,7 @@ let _storage: Storage | null = null
 function getStorage(): Storage {
   if (_storage) return _storage
 
-  // Check if plugin mounted KV storage on globalThis
+  // Production: plugin mounted CF KV storage on globalThis via useStorage().mount()
   const kvStorage = (globalThis as any).__holidayStorage
   if (kvStorage) {
     _storage = kvStorage
@@ -76,7 +76,11 @@ export const getHolidayYearly = async (
 
   const data = await getData(year)
 
-  if (data.length === 0) return data
+  // Cache empty results with short TTL to prevent hammering upstream
+  if (data.length === 0) {
+    await storage.setItem(year, data, { ttl: 3600 }) // 1 hour
+    return data
+  }
 
   const currentYear = new Date().getFullYear()
   const ttlSec = Number(year) >= currentYear

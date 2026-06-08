@@ -7,9 +7,4 @@ export default defineConfig({
       preset: 'cloudflare_pages',
     }),
   ],
-  resolve: {
-    alias: {
-      '@': '/src',
-    },
-  },
 })

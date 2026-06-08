@@ -1,6 +1,40 @@
+# Dependencies
 node_modules/
-.wrangler/
-.output/
+
+# Build output
 dist/
+.output/
 .nitro/
+
+# Wrangler
+.wrangler/
+
+# Secrets
 .dev.vars
+.env
+.env.local
+.env.*.local
+
+# Git worktrees (large)
+.worktrees/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Temp files
+*.tmp
+*.bak
+*.old

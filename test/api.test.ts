@@ -33,6 +33,7 @@ describe('API — /api — handler logic (via getHoliday)', () => {
   beforeAll(() => {
     mockFetch.mockResolvedValue({
       ok: true,
+      headers: { get: () => null },
       text: () => Promise.resolve(MOCK_HTML),
     })
   })
@@ -96,6 +97,7 @@ describe('API — /api/today (via getHolidayDate)', () => {
   beforeAll(() => {
     mockFetch.mockResolvedValue({
       ok: true,
+      headers: { get: () => null },
       text: () => Promise.resolve(MOCK_HTML),
     })
   })
@@ -118,6 +120,7 @@ describe('API — /api/tomorrow (via getHolidayDate)', () => {
   beforeAll(() => {
     mockFetch.mockResolvedValue({
       ok: true,
+      headers: { get: () => null },
       text: () => Promise.resolve(MOCK_HTML),
     })
   })

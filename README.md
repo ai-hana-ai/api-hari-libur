@@ -1,10 +1,10 @@
 # API Hari Libur Indonesia
 
 [![CI](https://github.com/ai-hana-ai/api-hari-libur/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-hana-ai/api-hari-libur/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-49%20passing-brightgreen)](https://github.com/ai-hana-ai/api-hari-libur)
+[![Tests](https://img.shields.io/badge/tests-96%20passing-brightgreen)](https://github.com/ai-hana-ai/api-hari-libur)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-Cloudflare%20Workers-orange)](https://workers.cloudflare.com/)
-[![Stack](https://img.shields.io/badge/stack-Vite%2B%20Nitro%20Hono-purple)](https://viteplus.dev)
+[![Stack](https://img.shields.io/badge/stack-Vite%2B%20Nitro-purple)](https://viteplus.dev)
 
 A free REST API for Indonesian public holidays (Hari Libur Nasional). Holiday data is scraped from [tanggalans.com](https://www.tanggalans.com/) and cached via [unstorage](https://unstorage.unjs.io/) — **memory in dev/test, Cloudflare KV in production**.
 
@@ -18,14 +18,14 @@ A free REST API for Indonesian public holidays (Hari Libur Nasional). Holiday da
 |-------|------|
 | **Runtime** | Cloudflare Workers (via Pages) |
 | **Server Engine** | [Nitro](https://nitro.build/) v3 (beta) |
-| **Framework** | [Hono](https://hono.dev/) |
+| **Framework** | [Nitro](https://nitro.build/) v3 + [h3](https://h3.unjs.io/) |
 | **Build Tool** | [Vite](https://vite.dev/) 8 + [Rolldown](https://rolldown.rs/) |
 | **Toolchain** | [Vite+](https://viteplus.dev/) (`vp` CLI) |
 | **Package** | [pnpm](https://pnpm.io/) |
-| **Validation** | [Zod](https://zod.dev/) / `@hono/zod-validator` |
+| **Validation** | [Zod](https://zod.dev/) + custom `utils/validation.ts` |
 | **Parsing** | [Linkedom](https://github.com/nicolo-ribaudo/linkedom) |
 | **Cache** | [unstorage](https://unstorage.unjs.io/) — memory/Cloudflare KV |
-| **Testing** | [Vitest](https://vitest.dev/) — 49 tests |
+| **Testing** | [Vitest](https://vitest.dev/) — 96 tests |
 | **Lint/Check** | `tsc --noEmit` |
 
 ## Architecture
@@ -263,7 +263,7 @@ curl https://api-hari-libur.pages.dev/api/tomorrow
 ```bash
 pnpm install
 pnpm dev          # → http://localhost:3000 (memory cache)
-pnpm test         # 49 tests (memory cache)
+pnpm test         # 96 tests (memory cache)
 pnpm build        # → dist/
 pnpm deploy       # → Cloudflare Pages (KV cache)
 ```
@@ -273,7 +273,7 @@ pnpm deploy       # → Cloudflare Pages (KV cache)
 Every push to `main`:
 
 1. `tsc --noEmit` — type check
-2. `vitest run` — 49 tests (including mocked fetch/crawler + unstorage cache)
+2. `vitest run` — 96 tests (including mocked fetch/crawler + unstorage cache)
 3. `vite build` — production build via Nitro + Rolldown
 
 ## KV Namespace

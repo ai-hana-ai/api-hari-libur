@@ -217,7 +217,7 @@
     yearPlaceholder.setAttribute('data-placeholder', 'year');
     inputYear.appendChild(yearPlaceholder);
 
-    for (var y = 2011; y <= 2027; y++) {
+    for (var y = 2011; y <= new Date().getFullYear() + 1; y++) {
       var opt = document.createElement('option');
       opt.value = y;
       opt.textContent = y;

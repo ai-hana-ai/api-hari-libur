@@ -3,17 +3,40 @@ import { MONTH_NAME } from './constants'
 
 type Holiday = { date: string; name: string }
 
+const MAX_RESPONSE_SIZE = 512 * 1024 // 512KB — tanggalans.com pages are ~50-100KB
+const FETCH_TIMEOUT = 10_000 // 10 seconds
+
 const fetcher = async (year: string): Promise<string> => {
-  const response = await fetch(`https://tanggalans.com/kalender-${year}`)
+  const url = `https://tanggalans.com/kalender-${year}`
+
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(FETCH_TIMEOUT),
+  })
 
   if (!response.ok) {
-    throw new Error('Failed to fetch tanggalan')
+    throw new Error(`Failed to fetch tanggalan: ${response.status}`)
   }
 
-  return await response.text()
+  // Guard against oversized responses
+  const contentLength = response.headers.get('content-length')
+  if (contentLength && Number(contentLength) > MAX_RESPONSE_SIZE) {
+    throw new Error(`Response too large: ${contentLength} bytes`)
+  }
+
+  const text = await response.text()
+  if (text.length > MAX_RESPONSE_SIZE) {
+    throw new Error(`Response body too large: ${text.length} bytes`)
+  }
+
+  return text
 }
 
 export const crawler = async (year: string): Promise<Holiday[]> => {
+  // Validate year to prevent URL manipulation
+  if (!/^\d{4}$/.test(year)) {
+    throw new Error(`Invalid year: ${year}`)
+  }
+
   const html = await fetcher(year)
 
   const { document } = parseHTML(html)
@@ -21,7 +44,7 @@ export const crawler = async (year: string): Promise<Holiday[]> => {
   const months = document.querySelectorAll('.entry-content .kalender-indo')
 
   if (!months || months.length === 0) {
-    throw new Error('Failed to parse DOM')
+    throw new Error('Failed to parse DOM — tanggalans.com structure may have changed')
   }
 
   return Array.from(months).flatMap((item: any) => {
