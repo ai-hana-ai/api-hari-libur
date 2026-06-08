@@ -1,27 +1,24 @@
 import { createStorage, type Storage } from 'unstorage'
 import memoryDriver from 'unstorage/drivers/memory'
+import cfDriver from 'unstorage/drivers/cloudflare-kv-binding'
 import { crawler } from './scraper'
 
 type Holiday = { name: string; date: string }
 
 let _storage: Storage | null = null
 
-// Called once from middleware on first request (production only)
-// Uses the KV binding object directly — no globalThis.__env__ needed
-export async function initKvStorage(binding: any) {
-  if (_storage) return // already initialized
-
-  const { default: cfDriver } = await import('unstorage/drivers/cloudflare-kv-binding')
+export function initKvStorage(binding: any) {
+  if (_storage) return
   _storage = createStorage({
     driver: cfDriver({ binding, base: 'api-hari-libur:' }),
   }) as unknown as Storage
 }
 
 function getStorage(): Storage {
-  if (!_storage) {
-    // Dev / tests — memory fallback
-    _storage = createStorage({ driver: memoryDriver() })
-  }
+  if (_storage) return _storage
+
+  // Dev / tests — memory fallback
+  _storage = createStorage({ driver: memoryDriver() })
   return _storage
 }
 
