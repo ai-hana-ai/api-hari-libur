@@ -4,7 +4,7 @@
 [![Tests](https://img.shields.io/badge/tests-48%20passing-brightgreen)](https://github.com/ai-hana-ai/api-hari-libur)
 [![Runtime](https://img.shields.io/badge/runtime-Cloudflare%20Workers-orange)](https://workers.cloudflare.com/)
 
-Free REST API untuk hari libur nasional Indonesia. Data di-scrape dari [tanggalans.com](https://www.tanggalans.com/) dan di-cache via [unstorage](https://unstorage.unjs.io/) — memory di dev/test, Cloudflare KV di production.
+Free REST API for Indonesian public holidays (Hari Libur Nasional). Data is scraped from [tanggalans.com](https://www.tanggalans.com/) and cached via [unstorage](https://unstorage.unjs.io/) — memory in dev/test, Cloudflare KV in production.
 
 **Production:** https://api-hari-libur.pages.dev
 
