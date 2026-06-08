@@ -1,21 +1,20 @@
 import { createStorage, type Storage } from 'unstorage'
 import memoryDriver from 'unstorage/drivers/memory'
-import cfDriver from 'unstorage/drivers/cloudflare-kv-binding'
 import { crawler } from './scraper'
 
 type Holiday = { name: string; date: string }
 
 let _storage: Storage | null = null
 
-export function initKvStorage(binding: any) {
-  if (_storage) return
-  _storage = createStorage({
-    driver: cfDriver({ binding, base: 'api-hari-libur:' }),
-  }) as unknown as Storage
-}
-
 function getStorage(): Storage {
   if (_storage) return _storage
+
+  // Check if plugin mounted KV storage on globalThis
+  const kvStorage = (globalThis as any).__holidayStorage
+  if (kvStorage) {
+    _storage = kvStorage
+    return _storage
+  }
 
   // Dev / tests — memory fallback
   _storage = createStorage({ driver: memoryDriver() })
