@@ -244,6 +244,62 @@ main {
   border: 1px solid var(--border);
 }
 
+/* ===== Features ===== */
+.features {
+  padding-bottom: 3rem;
+}
+
+.features h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.features h2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--merah);
+  border-radius: 2px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.feature-icon {
+  font-size: 1.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.feature-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.feature-card p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
 /* ===== Try It Live ===== */
 .try-it {
   padding-bottom: 3rem;
@@ -697,6 +753,10 @@ html.light .json-null { color: #dc2626; }
   main {
     padding: 0 1rem;
     padding-top: 72px;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
   }
 
   .try-select {
