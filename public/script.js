@@ -507,13 +507,4 @@
     });
   });
 
-  // CTA buttons
-  document.querySelectorAll('.cta-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var section = document.getElementById('try-it');
-      if (section) section.scrollIntoView({ behavior: 'smooth' });
-      fetchEndpoint(btn.dataset.endpoint);
-    });
-  });
-
 })();

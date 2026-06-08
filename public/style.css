@@ -244,57 +244,6 @@ main {
   border: 1px solid var(--border);
 }
 
-/* ===== Quick CTAs ===== */
-.quick-ctas {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  padding-bottom: 3rem;
-}
-
-.cta-btn {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  min-height: 44px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color var(--transition-speed) var(--ease-out-smooth),
-              color var(--transition-speed) var(--ease-out-smooth),
-              box-shadow var(--transition-speed) var(--ease-out-smooth),
-              transform var(--transition-speed) var(--ease-out-back);
-}
-
-/* Pseudo-element border slide from left */
-.cta-btn::before {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--merah);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform var(--transition-speed) var(--ease-out-expo);
-}
-
-.cta-btn:hover {
-  border-color: var(--merah);
-  color: var(--merah);
-  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.12);
-  transform: translateY(-1px);
-}
-
-.cta-btn:hover::before {
-  transform: scaleX(1);
-}
-
 /* ===== Try It Live ===== */
 .try-it {
   padding-bottom: 3rem;
@@ -748,15 +697,6 @@ html.light .json-null { color: #dc2626; }
   main {
     padding: 0 1rem;
     padding-top: 72px;
-  }
-
-  .quick-ctas {
-    flex-direction: column;
-  }
-
-  .cta-btn {
-    width: 100%;
-    text-align: center;
   }
 
   .try-select {
