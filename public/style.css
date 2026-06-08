@@ -694,6 +694,30 @@ html.light .json-null { color: #dc2626; }
   transition: border-color var(--transition-speed) var(--ease-out-smooth);
 }
 
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.footer-sep {
+  opacity: 0.4;
+}
+
+.footer-built {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  margin: 0;
+}
+
 .site-footer a {
   position: relative;
 }
