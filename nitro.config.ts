@@ -8,7 +8,10 @@ export default defineConfig({
       inlineDynamicImports: true,
     },
   },
-  scanDirs: ['.'],
+  scanDirs: ['routes', 'middleware', 'utils'],
+  imports: {
+    dirs: ['utils'],
+  },
   cloudflare: {
     nodeCompat: true,
   },
