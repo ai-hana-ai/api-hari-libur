@@ -444,7 +444,7 @@
   var responseStatus = document.querySelector('.response-status');
   var dateDropdowns = document.getElementById('dateDropdowns');
 
-  var activeEndpoint = '/api';
+  var activeEndpoint = null;
 
   function showDropdowns() {
     if (dateDropdowns) dateDropdowns.classList.remove('hidden');
